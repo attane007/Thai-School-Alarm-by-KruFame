@@ -1,6 +1,7 @@
 import sys
 import sqlite3
 import os
+import platform
 from PySide6 import QtCore, QtWidgets, QtGui
 from PySide6.QtGui import QIcon
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
@@ -250,15 +251,33 @@ class MyWidget(QtWidgets.QWidget):
         self.datetime_startup.setCalendarPopup(True)
         locale = QtCore.QLocale(QtCore.QLocale.English)
         self.datetime_startup.setLocale(locale)
-        self.datetime_startup.setTime(QtCore.QTime.currentTime())
         self.datetime_startup.setFixedWidth(100)
+        cursor.execute('SELECT * FROM utility where name="startup_time" limit 1')
+        startup_time = cursor.fetchone()
+        if startup_time:
+            startup_time=dict(startup_time)
+            time_value = startup_time['value']
+            time_parts = time_value.split(":")
+            if len(time_parts) == 2:
+                hours, minutes = int(time_parts[0]), int(time_parts[1])
+                self.datetime_startup.setTime(QtCore.QTime(hours, minutes))
+
 
         self.datetime_shutdown = QtWidgets.QTimeEdit(self)
         self.datetime_shutdown.setCalendarPopup(True)
         locale = QtCore.QLocale(QtCore.QLocale.English)
         self.datetime_shutdown.setLocale(locale)
-        self.datetime_shutdown.setTime(QtCore.QTime.currentTime())
         self.datetime_shutdown.setFixedWidth(100)
+        cursor.execute('SELECT * FROM utility where name="shutdown_time" limit 1')
+        shutdown_time = cursor.fetchone()
+        if shutdown_time:
+            shutdown_time=dict(shutdown_time)
+            time_value = shutdown_time['value']
+            time_parts = time_value.split(":")
+            if len(time_parts) == 2:
+                hours, minutes = int(time_parts[0]), int(time_parts[1])
+                self.datetime_shutdown.setTime(QtCore.QTime(hours, minutes))
+
 
         self.checkbox_shutdown = QtWidgets.QCheckBox("ปิดเครื่องอัตโนมัติ")
         self.checkbox_shutdown.setFixedWidth(120)
@@ -283,6 +302,11 @@ class MyWidget(QtWidgets.QWidget):
                 if i['status']:
                     self.combo_bell.setCurrentIndex(self.combo_bell.findData(bell_id))
 
+        current_time=QtCore.QTime.currentTime()
+        time_string = "เวลาปัจจุบัน "+current_time.toString("hh:mm:ss")
+        self.system_time_label = QtWidgets.QLabel(time_string)
+        self.system_time_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.system_time_label.setStyleSheet("font-size: 16px;font-weight:700;")
 
         self.startup_layout.addWidget(self.checkbox_startup)
         self.startup_layout.addWidget(self.datetime_startup)
@@ -300,6 +324,7 @@ class MyWidget(QtWidgets.QWidget):
         self.bottom_grid_layout.addLayout(self.startup_layout,0,1)
         self.bottom_grid_layout.addLayout(self.shutdown_layout,0,2)
         self.bottom_grid_layout.addLayout(self.bell_layout,0,3)
+        self.bottom_grid_layout.addWidget(self.system_time_label,0,4)
         self.system_layout.addLayout(self.bottom_grid_layout)
 
         conn.commit()
@@ -516,8 +541,9 @@ class MyWidget(QtWidgets.QWidget):
         current_hour_local = current_time_local.time().hour()
         current_minute_local = current_time_local.time().minute()
         current_second_local = current_time_local.time().second()
-        
-        print(f"Local Time: {current_hour_local}:{current_minute_local}:{current_second_local}")
+
+        time_string = f"เวลาปัจจุบัน {current_hour_local:02}:{current_minute_local:02}:{current_second_local:02}"
+        self.system_time_label.setText(time_string)
 
         if current_minute_local != self.last_played_minute:
             for schedule in self.schedule_list:
@@ -593,14 +619,88 @@ class MyWidget(QtWidgets.QWidget):
         # Update bell
         bell_id=self.combo_bell.currentIndex()
         bell_id=bell_id+1
-        print(bell_id)
         cursor.execute('''UPDATE bell set status=0
                        ''')
         cursor.execute('UPDATE bell SET status = 1 WHERE id = ?', (bell_id,))
         
+        auto_startup_status=self.checkbox_auto_startup.isChecked()
+        cursor.execute('''SELECT * FROM utility where name="auto_startup"''')
+        auto_startup = cursor.fetchone()
+        if auto_startup_status:
+            self.add_to_startup("add")
+        else:
+            self.add_to_startup("remove")
+        if auto_startup:
+            cursor.execute('''UPDATE utility SET value=? WHERE name="auto_startup"''', (int(auto_startup_status),))
+        else:
+            cursor.execute('''INSERT INTO utility (name, value) VALUES (?, ?)''', ("auto_startup", int(auto_startup_status)))
+        
+
         conn.commit()
         conn.close()
         self.initialize_schedule()
+
+    def add_to_startup(self,action):
+        os_name = platform.system()
+        
+        if os_name == 'Windows':
+            self.add_to_startup_windows(action)
+        elif os_name == 'Linux':
+            self.add_to_startup_linux(action)
+        else:
+            raise NotImplementedError(f"Unsupported OS: {os_name}")
+        
+    def add_to_startup_windows(self,action):
+        import shutil
+        try:
+            import pythoncom
+            from win32com.client import Dispatch
+        except ImportError:
+            print("pywin32 is required on Windows.")
+            return
+
+        startup_dir = os.path.join(os.getenv('APPDATA'), 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup')
+        script_path = sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__)
+        shortcut_path = os.path.join(startup_dir, 'thai_school_alarm.lnk')
+        
+        if action == 'add':
+            shell = Dispatch('WScript.Shell')
+            shortcut = shell.CreateShortCut(shortcut_path)
+            shortcut.Targetpath = script_path
+            shortcut.WorkingDirectory = os.path.dirname(script_path)
+            shortcut.save()
+        elif action == 'remove':
+            if os.path.exists(shortcut_path):
+                os.remove(shortcut_path)
+            else:
+                print("Startup shortcut does not exist.")
+
+    def add_to_startup_linux(self,action):
+        service_path = '/etc/systemd/system/thai_school_alarm.service'
+        script_path = sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__)
+
+        if action == 'add':
+            service_content = f"""
+            [Unit]
+            Description=thai_school_alarm
+
+            [Service]
+            ExecStart={script_path}
+
+            [Install]
+            WantedBy=default.target
+            """
+            with open(service_path, 'w') as service_file:
+                service_file.write(service_content)
+            
+            os.system('systemctl enable thai_school_alarm.service')
+        elif action == 'remove':
+            if os.path.exists(service_path):
+                os.remove(service_path)
+                os.system('systemctl disable thai_school_alarm.service')
+            else:
+                print("Systemd service does not exist.")
+
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication([])
