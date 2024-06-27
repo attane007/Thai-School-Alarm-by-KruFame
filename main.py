@@ -33,7 +33,24 @@ class MyWidget(QtWidgets.QWidget):
         
 
         # Widgets
-        self.button = QtWidgets.QPushButton("Save!")
+        self.button = QtWidgets.QPushButton(" บันทึก!")
+        self.button.setIcon(QIcon("resource/save-save-file-svgrepo-com.svg"))
+        self.button.setFixedHeight(40)
+        self.button.setFixedWidth(100)
+        self.button.setStyleSheet("background-color: #87cefa; color: black;")
+
+        self.button_clear = QtWidgets.QPushButton(" ล้างข้อมูล!")
+        self.button_clear.setIcon(QIcon("resource/bin-svgrepo-com.svg"))
+        self.button_clear.setFixedHeight(40)
+        self.button_clear.setFixedWidth(100)
+        self.button_clear.setStyleSheet("background-color: #ff0800; color: white;")
+
+        self.button_announcement = QtWidgets.QPushButton(" ประกาศ!")
+        self.button_announcement.setIcon(QIcon("resource/announcement-svgrepo-com.svg"))
+        self.button_announcement.setFixedHeight(40)
+        self.button_announcement.setFixedWidth(100)
+        self.button_announcement.setStyleSheet("background-color: #fadfad; color: black;")
+
         self.name_label = QtWidgets.QLabel("Name:")
         # self.name_label.setFixedWidth(50)
         self.head_label3 = QtWidgets.QLabel("ชั่วโมง")
@@ -173,10 +190,16 @@ class MyWidget(QtWidgets.QWidget):
         self.form_grid_layout.addWidget(self.head_label6, 0,8)
         self.form_grid_layout.addWidget(self.head_label8, 0,9)
 
+        # Button layout 
+        self.button_layout = QtWidgets.QHBoxLayout()
+        self.button_layout.addWidget(self.button_announcement)
+        self.button_layout.addWidget(self.button)
+        self.button_layout.addWidget(self.button_clear)        
+        self.button_layout.setAlignment(QtCore.Qt.AlignRight)
 
         # Adding grid layout to the main layout
         self.layout.addLayout(self.form_grid_layout)
-        self.layout.addWidget(self.button)
+        self.layout.addLayout(self.button_layout)
 
         # Signals
         self.button.clicked.connect(self.save_data)
@@ -409,8 +432,7 @@ class MyWidget(QtWidgets.QWidget):
                         self.last_played_minute = current_minute_local
                         
                         break
-            
-
+         
     def clear_target_data(self,index):
         i=index-1
         self.checkboxes[i].setChecked(False)
