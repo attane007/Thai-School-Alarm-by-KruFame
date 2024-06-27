@@ -203,8 +203,13 @@ class MyWidget(QtWidgets.QWidget):
 
         # Signals
         self.button.clicked.connect(self.save_data)
+        self.button_announcement.clicked.connect(self.on_announcement)
+        self.button_clear.clicked.connect(self.clear_all_data)
         self.head_checkbox.stateChanged.connect(self.on_checkbox_state_changed)
         self.head_checkbox_time.stateChanged.connect(self.on_checkbox_time_state_changed)
+
+    def on_announcement(self):
+        self.play_action("announcement")
 
 
     def on_checkbox_state_changed(self, state):
@@ -329,32 +334,35 @@ class MyWidget(QtWidgets.QWidget):
         else:
             return False
 
-        cursor.execute('SELECT * FROM schedule where id=? limit 1',(index,))
-        schedule = cursor.fetchone()
-        if schedule:
-            schedule=dict(schedule)
-        conn.commit()
-        conn.close()
-    
         self.audio_files=[]
-        if schedule['hour'] != "" or schedule['minute'] != "":
-            if schedule['tell_time']:
-                self.audio_files.append(bell['first'])
-                self.audio_files.extend(tell_hour(schedule['hour']))
-                self.audio_files.extend(tell_minute(schedule['minute']))
-            if schedule['sound']!="":
-                self.audio_files.append(schedule['sound'])
-            if schedule['sound_eng']!="":
-                self.audio_files.append(schedule['sound_eng'])
-            if schedule['tell_time']:
-                self.audio_files.append(bell['last'])
+        if index!="announcement":
+            cursor.execute('SELECT * FROM schedule where id=? limit 1',(index,))
+            schedule = cursor.fetchone()
+            if schedule:
+                schedule=dict(schedule)
+            conn.commit()
+            conn.close()
+        
+            if schedule['hour'] != "" or schedule['minute'] != "":
+                if schedule['tell_time']:
+                    self.audio_files.append(bell['first'])
+                    self.audio_files.extend(tell_hour(schedule['hour']))
+                    self.audio_files.extend(tell_minute(schedule['minute']))
+                if schedule['sound']!="":
+                    self.audio_files.append(schedule['sound'])
+                if schedule['sound_eng']!="":
+                    self.audio_files.append(schedule['sound_eng'])
+                if schedule['tell_time']:
+                    self.audio_files.append(bell['last'])
+            else:
+                msg_box = QtWidgets.QMessageBox()
+                msg_box.setIcon(QtWidgets.QMessageBox.Warning)
+                msg_box.setWindowTitle('Alert')
+                msg_box.setText('กรุณาเลือกชั่วโมงและนาทีก่อน!')
+                msg_box.setStandardButtons(QtWidgets.QMessageBox.Ok)
+                msg_box.exec()
         else:
-            msg_box = QtWidgets.QMessageBox()
-            msg_box.setIcon(QtWidgets.QMessageBox.Warning)
-            msg_box.setWindowTitle('Alert')
-            msg_box.setText('กรุณาเลือกชั่วโมงและนาทีก่อน!')
-            msg_box.setStandardButtons(QtWidgets.QMessageBox.Ok)
-            msg_box.exec()
+            self.audio_files.append(bell['first'])
 
         self.current_index = 0
         self.play_audio()
@@ -444,9 +452,24 @@ class MyWidget(QtWidgets.QWidget):
         self.path_thai[i]=""
         self.path_eng[i]=""
     
+    def clear_all_data(self):
+        reply = QtWidgets.QMessageBox.question(
+            self,
+            "ยืนยันการล้างข้อมูล",
+            "ต้องการล้างข้อมูลการตั้งค่าทั้งหมดหรือไม่?",
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+            QtWidgets.QMessageBox.No
+        )
+        if reply == QtWidgets.QMessageBox.Yes:
+            os.remove(database_filename)
+            for i in range(1,25):
+                self.clear_target_data(i)
+            self.connect_db()
+            print("Clear All!!")
+
     @QtCore.Slot()
     def save_data(self):
-        print("save !!")
+        print("Save !!")
         conn = sqlite3.connect(database_filename)
         cursor = conn.cursor()
 
