@@ -250,7 +250,11 @@ class MyWidget(QtWidgets.QWidget):
             cursor.execute('''CREATE TABLE utility (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name VARCHAR(200),
-            status BOOLEAN DEFAULT 0)
+            value VARCHAR(200))
+            ''')
+
+            cursor.execute('''
+            CREATE INDEX idx_name ON utility (name)
             ''')
 
             cursor.execute('''
@@ -399,7 +403,16 @@ class MyWidget(QtWidgets.QWidget):
 if __name__ == "__main__":
     app = QtWidgets.QApplication([])
 
-    widget = MyWidget()
+    main_widget = QtWidgets.QWidget()
+    scroll = QtWidgets.QScrollArea()
+    scroll.setWidgetResizable(True)
 
-    widget.showMaximized()
+    widget = MyWidget()
+    scroll.setWidget(widget)
+
+    layout = QtWidgets.QVBoxLayout(main_widget)
+    layout.addWidget(scroll)
+    main_widget.setLayout(layout)
+
+    main_widget.showMaximized()
     sys.exit(app.exec())
