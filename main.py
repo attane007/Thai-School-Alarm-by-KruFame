@@ -27,7 +27,6 @@ class MyWidget(QtWidgets.QWidget):
             else:
                 self.path_eng.append(self.data[(i-1)]['sound_eng'])
 
-        self.setWindowTitle("Thai School Alarm by KruFame")
         self.setStyleSheet("background-color: white;")
         self.initialize_schedule()
         
@@ -59,6 +58,10 @@ class MyWidget(QtWidgets.QWidget):
         self.head_label6 = QtWidgets.QLabel("ทดสอบ")
         self.head_label7 = QtWidgets.QLabel("เสียงอังกฤษ")
         self.head_label8 = QtWidgets.QLabel("ล้างข้อมูล")
+        self.bottom_label_licence = QtWidgets.QLabel("*ไม่อนุญาตให้ใช้ในเชิงพาณิชย์")
+        self.bottom_label_licence.setStyleSheet("color: #6495ed; font-size: 16px;")
+        self.bottom_label_warning = QtWidgets.QLabel("**กดปุ่มบันทึกทุกครั้งที่มีการแก้ไขข้อมูล")
+        self.bottom_label_warning.setStyleSheet("color: red; font-size: 16px;")
         self.head_checkbox = QtWidgets.QCheckBox("ทั้งหมด")
         self.head_checkbox_time = QtWidgets.QCheckBox("บอกเวลา")
 
@@ -180,7 +183,6 @@ class MyWidget(QtWidgets.QWidget):
             self.test.append(play_button)
             self.form_grid_layout.addWidget(play_button,i,9)
 
-
         self.form_grid_layout.addWidget(self.head_checkbox, 0,0)
         self.form_grid_layout.addWidget(self.head_checkbox_time, 0,1)
         self.form_grid_layout.addWidget(self.head_label3, 0,2)
@@ -190,15 +192,12 @@ class MyWidget(QtWidgets.QWidget):
         self.form_grid_layout.addWidget(self.head_label6, 0,8)
         self.form_grid_layout.addWidget(self.head_label8, 0,9)
 
-        # Button layout 
-        self.button_layout = QtWidgets.QHBoxLayout()
-        self.button_layout.addWidget(self.button_announcement)
-        self.button_layout.addWidget(self.button)
-        self.button_layout.addWidget(self.button_clear)        
-        self.button_layout.setAlignment(QtCore.Qt.AlignRight)
+        self.create_system_layout()
+        self.create_button_layout()
 
         # Adding grid layout to the main layout
         self.layout.addLayout(self.form_grid_layout)
+        self.layout.addLayout(self.system_layout)
         self.layout.addLayout(self.button_layout)
 
         # Signals
@@ -208,9 +207,89 @@ class MyWidget(QtWidgets.QWidget):
         self.head_checkbox.stateChanged.connect(self.on_checkbox_state_changed)
         self.head_checkbox_time.stateChanged.connect(self.on_checkbox_time_state_changed)
 
+    def create_button_layout(self):
+        # Button layout 
+        self.button_layout = QtWidgets.QHBoxLayout()
+        self.button_layout.addWidget(self.bottom_label_licence)     
+        self.button_layout.addWidget(self.bottom_label_warning)
+        self.button_layout.addWidget(self.button_announcement)
+        self.button_layout.addWidget(self.button)
+        self.button_layout.addWidget(self.button_clear)      
+        self.button_layout.setAlignment(QtCore.Qt.AlignRight)
+
+    def create_system_layout(self):
+        conn = sqlite3.connect(database_filename)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        # system layout
+        self.system_layout = QtWidgets.QHBoxLayout()
+        self.bottom_grid_layout = QtWidgets.QGridLayout()
+        self.startup_layout = QtWidgets.QHBoxLayout()
+        self.shutdown_layout = QtWidgets.QHBoxLayout()
+
+        self.checkbox_auto_startup = QtWidgets.QCheckBox("เริ่มโปรแกรมอัตโนมัติเมื่อเปิดเครื่อง")
+        cursor.execute('SELECT * FROM utility where name="auto_startup" limit 1')
+        auto_startup = cursor.fetchone()
+        if auto_startup:
+            auto_startup=dict(auto_startup)
+            if auto_startup['value']=='1':
+                self.checkbox_auto_startup.setChecked(True)
+
+        self.checkbox_startup = QtWidgets.QCheckBox("เปิดเครื่องอัตโนมัติ")
+        self.checkbox_startup.setFixedWidth(120)
+        cursor.execute('SELECT * FROM utility where name="startup" limit 1')
+        startup = cursor.fetchone()
+        if startup:
+            startup=dict(auto_startup)
+            if startup['value']=='1':
+                self.checkbox_startup.setChecked(True)
+
+        self.datetime_startup = QtWidgets.QTimeEdit(self)
+        self.datetime_startup.setCalendarPopup(True)
+        locale = QtCore.QLocale(QtCore.QLocale.English)
+        self.datetime_startup.setLocale(locale)
+        self.datetime_startup.setTime(QtCore.QTime.currentTime())
+        self.datetime_startup.setFixedWidth(100)
+
+        self.datetime_shutdown = QtWidgets.QTimeEdit(self)
+        self.datetime_shutdown.setCalendarPopup(True)
+        locale = QtCore.QLocale(QtCore.QLocale.English)
+        self.datetime_shutdown.setLocale(locale)
+        self.datetime_shutdown.setTime(QtCore.QTime.currentTime())
+        self.datetime_shutdown.setFixedWidth(100)
+
+        self.checkbox_shutdown = QtWidgets.QCheckBox("ปิดเครื่องอัตโนมัติ")
+        self.checkbox_shutdown.setFixedWidth(120)
+        cursor.execute('SELECT * FROM utility where name="shutdown" limit 1')
+        shutdown = cursor.fetchone()
+        if shutdown:
+            shutdown=dict(auto_startup)
+            if shutdown['value']=='1':
+                self.checkbox_shutdown.setChecked(True)
+
+        self.label_bell = QtWidgets.QLabel("เสียงระฆัง: ")
+        self.combo_bell = QtWidgets.QComboBox()
+
+        self.startup_layout.addWidget(self.checkbox_startup)
+        self.startup_layout.addWidget(self.datetime_startup)
+        self.startup_layout.setContentsMargins(0, 0, 30, 0)
+
+        self.shutdown_layout.addWidget(self.checkbox_shutdown)
+        self.shutdown_layout.addWidget(self.datetime_shutdown)
+        self.shutdown_layout.setContentsMargins(0, 0, 30, 0)
+
+        self.bottom_grid_layout.addWidget(self.checkbox_auto_startup,0,0)
+        self.bottom_grid_layout.addLayout(self.startup_layout,0,1)
+        self.bottom_grid_layout.addLayout(self.shutdown_layout,0,2)
+        self.bottom_grid_layout.addWidget(self.label_bell,0,3)
+        self.system_layout.addLayout(self.bottom_grid_layout)
+
+        conn.commit()
+        conn.close()
+
     def on_announcement(self):
         self.play_action("announcement")
-
 
     def on_checkbox_state_changed(self, state):
         conn = sqlite3.connect(database_filename)
@@ -311,7 +390,7 @@ class MyWidget(QtWidgets.QWidget):
 
     def open_file_dialog(self,index,target):
         file_dialog = QtWidgets.QFileDialog()
-        file_dialog.setNameFilter("Audio files (*.wav *.mp3)")
+        file_dialog.setNameFilter("Audio files (*.wav *.mp3 *.ogg *.flac *.aac)")
         default_directory = os.path.join(os.path.dirname(__file__), "audio")
         file_dialog.setDirectory(default_directory)
         if file_dialog.exec():
@@ -340,6 +419,8 @@ class MyWidget(QtWidgets.QWidget):
             schedule = cursor.fetchone()
             if schedule:
                 schedule=dict(schedule)
+            else:
+                return False
             conn.commit()
             conn.close()
         
@@ -403,7 +484,7 @@ class MyWidget(QtWidgets.QWidget):
         conn = sqlite3.connect(database_filename)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM schedule')
+        cursor.execute('SELECT * FROM schedule where status=1')
         self.schedule_list = cursor.fetchall()
         if self.schedule_list:
             self.schedule_list = [dict(row) for row in self.schedule_list]
@@ -507,6 +588,7 @@ if __name__ == "__main__":
 
     layout = QtWidgets.QVBoxLayout(main_widget)
     layout.addWidget(scroll)
+    main_widget.setWindowTitle("Thai School Alarm by KruFame")
     main_widget.setLayout(layout)
 
     main_widget.showMaximized()
