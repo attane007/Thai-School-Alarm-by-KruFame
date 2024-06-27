@@ -157,9 +157,9 @@ class MyWidget(QtWidgets.QWidget):
         self.clear_data=[]
         for i in range(1,25):
             play_button = QtWidgets.QPushButton()
-            play_button.setIcon(QIcon("resource/play-circle-svgrepo-com.svg"))
+            play_button.setIcon(QIcon("resource/bin-svgrepo-com.svg"))
             play_button.setStyleSheet("background-color: #dc143c; color: white;")
-            play_button.clicked.connect(lambda checked,index=i:self.play_action(index))
+            play_button.clicked.connect(lambda checked,index=i:self.clear_target_data(index))
             self.test.append(play_button)
             self.form_grid_layout.addWidget(play_button,i,9)
 
@@ -385,7 +385,16 @@ class MyWidget(QtWidgets.QWidget):
         if status == QMediaPlayer.EndOfMedia:
             self.next_audio()
 
-
+    def clear_target_data(self,index):
+        i=index-1
+        self.checkboxes[i].setChecked(False)
+        self.checkboxes2[i].setChecked(False)
+        self.combobox[i].setCurrentIndex(-1)
+        self.combobox_minutes[i].setCurrentIndex(-1)
+        self.textbox_thai[i].setText("")
+        self.textbox_eng[i].setText("")
+        self.path_thai[i]=""
+        self.path_eng[i]=""
             
 if __name__ == "__main__":
     app = QtWidgets.QApplication([])

@@ -30,7 +30,7 @@ def tell_hour(hour):
 
 def tell_minute(minute):
     thai_minute_mapping = {
-        "00": ['audio/thai/เวลา/00.wav', 'audio/thai/เวลา/min.wav'],
+        "00": ['audio/thai/เวลา/00.wav'],
         "01": ['audio/thai/เวลา/01.wav', 'audio/thai/เวลา/min.wav'],
         "02": ['audio/thai/เวลา/02.wav', 'audio/thai/เวลา/min.wav'],
         "03": ['audio/thai/เวลา/03.wav', 'audio/thai/เวลา/min.wav'],
