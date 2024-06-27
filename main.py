@@ -5,7 +5,6 @@ from PySide6 import QtCore, QtWidgets, QtGui
 from PySide6.QtGui import QIcon
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtCore import QUrl
-from scheduler import SoundScheduler
 from tell_time import tell_hour,tell_minute
 
 database_filename = 'data.db'
@@ -30,6 +29,7 @@ class MyWidget(QtWidgets.QWidget):
 
         self.setWindowTitle("Thai School Alarm by KruFame")
         self.setStyleSheet("background-color: white;")
+        self.initialize_schedule()
         
 
         # Widgets
@@ -164,8 +164,6 @@ class MyWidget(QtWidgets.QWidget):
             self.form_grid_layout.addWidget(play_button,i,9)
 
 
-
-
         self.form_grid_layout.addWidget(self.head_checkbox, 0,0)
         self.form_grid_layout.addWidget(self.head_checkbox_time, 0,1)
         self.form_grid_layout.addWidget(self.head_label3, 0,2)
@@ -297,7 +295,6 @@ class MyWidget(QtWidgets.QWidget):
                 self.path_eng[(index-1)]=selected_files[0]
                 self.textbox_eng[(index-1)].setText(os.path.basename(selected_files[0]))
 
-
     def play_action(self,index):
         conn = sqlite3.connect(database_filename)
         conn.row_factory = sqlite3.Row
@@ -306,6 +303,8 @@ class MyWidget(QtWidgets.QWidget):
         bell = cursor.fetchone()
         if bell:
             bell=dict(bell)
+        else:
+            return False
 
         cursor.execute('SELECT * FROM schedule where id=? limit 1',(index,))
         schedule = cursor.fetchone()
@@ -362,6 +361,56 @@ class MyWidget(QtWidgets.QWidget):
         if status == QMediaPlayer.EndOfMedia:
             self.next_audio()
 
+    def initialize_schedule(self):
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.check_schedule)
+        self.timer.start(1000)
+        self.last_played_minute = None
+        self.load_schedule_from_database()
+    
+    def load_schedule_from_database(self):
+        conn = sqlite3.connect(database_filename)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM schedule')
+        self.schedule_list = cursor.fetchall()
+        if self.schedule_list:
+            self.schedule_list = [dict(row) for row in self.schedule_list]
+        cursor.close()
+        conn.commit()
+        conn.close()
+    
+    def check_schedule(self):
+        current_time_local = QtCore.QDateTime.currentDateTime()  # Fetch current local time
+        
+        # Extract hour, minute, and second components from current local time
+        current_hour_local = current_time_local.time().hour()
+        current_minute_local = current_time_local.time().minute()
+        current_second_local = current_time_local.time().second()
+        
+        print(f"Local Time: {current_hour_local}:{current_minute_local}:{current_second_local}")
+
+        if current_minute_local != self.last_played_minute:
+            for schedule in self.schedule_list:
+                hour = schedule['hour']
+                minute = schedule['minute']
+                if hour and minute:
+                    scheduled_hour = int(hour)
+                    scheduled_minute = int(minute)
+                    if (current_hour_local == scheduled_hour and
+                        current_minute_local == scheduled_minute):
+                        # Perform action when scheduled time matches current time
+                        print(f"Scheduled time matched: {scheduled_hour}:{scheduled_minute}")
+                        self.play_action(schedule['id'])
+                        # Example: Call a function to play sound based on the schedule
+                        # self.play_sound(schedule['sound'])
+                        
+                        # Update any necessary flags or state variables
+                        self.last_played_minute = current_minute_local
+                        
+                        break
+            
+
     def clear_target_data(self,index):
         i=index-1
         self.checkboxes[i].setChecked(False)
@@ -399,6 +448,7 @@ class MyWidget(QtWidgets.QWidget):
             ''', (hour, minute, sound, sound_eng, status, tell_time, i+1))
         conn.commit()
         conn.close()
+        self.initialize_schedule()
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication([])
