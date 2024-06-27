@@ -702,7 +702,7 @@ class MyWidget(QtWidgets.QWidget):
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication([])
-    app_icon = QtGui.QIcon("icon.jpg") 
+    app_icon = QtGui.QIcon("icon.ico") 
     app.setWindowIcon(app_icon)
 
     main_widget = QtWidgets.QWidget()

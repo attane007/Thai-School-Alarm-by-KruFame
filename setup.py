@@ -6,7 +6,8 @@ build_exe_options = {
     "packages": ["os", "sys", "PySide6"],  # Add PyQt6 or PySide6 as needed
     "include_files": [
         "audio/",  # Adjust paths as needed
-        "resource/"
+        "resource/",
+        "icon.ico"
     ],
     "excludes": [],
     "optimize": 2,
@@ -22,5 +23,5 @@ setup(
     version="1.0",
     description="Thai School Alarm by KruFame",
     options={"build_exe": build_exe_options},
-    executables=[Executable("TSAlarm.py", base=base,icon="icon.jpg")],
+    executables=[Executable("TSAlarm.py", base=base,icon="icon.ico")],
 )
