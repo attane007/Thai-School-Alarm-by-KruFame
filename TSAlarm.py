@@ -238,56 +238,6 @@ class MyWidget(QtWidgets.QWidget):
             if auto_startup['value']=='1':
                 self.checkbox_auto_startup.setChecked(True)
 
-        self.checkbox_startup = QtWidgets.QCheckBox("เปิดเครื่องอัตโนมัติ")
-        self.checkbox_startup.setFixedWidth(120)
-        cursor.execute('SELECT * FROM utility where name="startup" limit 1')
-        startup = cursor.fetchone()
-        if startup:
-            startup=dict(startup)
-            if startup['value']=='1':
-                self.checkbox_startup.setChecked(True)
-
-        self.datetime_startup = QtWidgets.QTimeEdit(self)
-        self.datetime_startup.setCalendarPopup(True)
-        locale = QtCore.QLocale(QtCore.QLocale.English)
-        self.datetime_startup.setLocale(locale)
-        self.datetime_startup.setFixedWidth(100)
-        cursor.execute('SELECT * FROM utility where name="startup_time" limit 1')
-        startup_time = cursor.fetchone()
-        if startup_time:
-            startup_time=dict(startup_time)
-            time_value = startup_time['value']
-            time_parts = time_value.split(":")
-            if len(time_parts) == 2:
-                hours, minutes = int(time_parts[0]), int(time_parts[1])
-                self.datetime_startup.setTime(QtCore.QTime(hours, minutes))
-
-
-        self.datetime_shutdown = QtWidgets.QTimeEdit(self)
-        self.datetime_shutdown.setCalendarPopup(True)
-        locale = QtCore.QLocale(QtCore.QLocale.English)
-        self.datetime_shutdown.setLocale(locale)
-        self.datetime_shutdown.setFixedWidth(100)
-        cursor.execute('SELECT * FROM utility where name="shutdown_time" limit 1')
-        shutdown_time = cursor.fetchone()
-        if shutdown_time:
-            shutdown_time=dict(shutdown_time)
-            time_value = shutdown_time['value']
-            time_parts = time_value.split(":")
-            if len(time_parts) == 2:
-                hours, minutes = int(time_parts[0]), int(time_parts[1])
-                self.datetime_shutdown.setTime(QtCore.QTime(hours, minutes))
-
-
-        self.checkbox_shutdown = QtWidgets.QCheckBox("ปิดเครื่องอัตโนมัติ")
-        self.checkbox_shutdown.setFixedWidth(120)
-        cursor.execute('SELECT * FROM utility where name="shutdown" limit 1')
-        shutdown = cursor.fetchone()
-        if shutdown:
-            shutdown=dict(shutdown)
-            if shutdown['value']=='1':
-                self.checkbox_shutdown.setChecked(True)
-
         self.label_bell = QtWidgets.QLabel("เสียงระฆัง: ")
         self.label_bell.setFixedWidth(60)
         self.combo_bell = QtWidgets.QComboBox()
@@ -308,21 +258,11 @@ class MyWidget(QtWidgets.QWidget):
         self.system_time_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.system_time_label.setStyleSheet("font-size: 16px;font-weight:700;")
 
-        self.startup_layout.addWidget(self.checkbox_startup)
-        self.startup_layout.addWidget(self.datetime_startup)
-        self.startup_layout.setContentsMargins(0, 0, 30, 0)
-
-        self.shutdown_layout.addWidget(self.checkbox_shutdown)
-        self.shutdown_layout.addWidget(self.datetime_shutdown)
-        self.shutdown_layout.setContentsMargins(0, 0, 30, 0)
-
         self.bell_layout.addWidget(self.label_bell)
         self.bell_layout.addWidget(self.combo_bell)
         self.bell_layout.setContentsMargins(0, 0, 30, 0)
 
         self.bottom_grid_layout.addWidget(self.checkbox_auto_startup,0,0)
-        self.bottom_grid_layout.addLayout(self.startup_layout,0,1)
-        self.bottom_grid_layout.addLayout(self.shutdown_layout,0,2)
         self.bottom_grid_layout.addLayout(self.bell_layout,0,3)
         self.bottom_grid_layout.addWidget(self.system_time_label,0,4)
         self.system_layout.addLayout(self.bottom_grid_layout)
@@ -588,6 +528,7 @@ class MyWidget(QtWidgets.QWidget):
             os.remove(database_filename)
             for i in range(1,25):
                 self.clear_target_data(i)
+            self.checkbox_auto_startup.setChecked(False)
             self.connect_db()
             print("Clear All!!")
 
