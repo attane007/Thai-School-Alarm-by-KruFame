@@ -297,32 +297,6 @@ class MyWidget(QtWidgets.QWidget):
                 self.path_eng[(index-1)]=selected_files[0]
                 self.textbox_eng[(index-1)].setText(os.path.basename(selected_files[0]))
 
-    @QtCore.Slot()
-    def save_data(self):
-        print("save !!")
-        conn = sqlite3.connect(database_filename)
-        cursor = conn.cursor()
-
-        for i in range(24):
-            hour=self.combobox[i].currentText()
-            minute=self.combobox_minutes[i].currentText()
-            sound=self.path_thai[i]
-            sound_eng=self.path_eng[i]
-            if self.checkboxes[i].isChecked():
-                status=1
-            else:
-                status=0
-            if self.checkboxes2[i].isChecked():
-                tell_time=1
-            else:
-                tell_time=0
-            cursor.execute('''
-                UPDATE schedule
-                SET hour = ?, minute = ?, sound = ?, sound_eng = ?, status = ?, tell_time = ?
-                WHERE id = ?
-            ''', (hour, minute, sound, sound_eng, status, tell_time, i+1))
-        conn.commit()
-        conn.close()
 
     def play_action(self,index):
         conn = sqlite3.connect(database_filename)
@@ -384,7 +358,6 @@ class MyWidget(QtWidgets.QWidget):
         if self.current_index < len(self.audio_files):
             self.play_audio()
    
-
     def on_media_status_changed(self, status):
         if status == QMediaPlayer.EndOfMedia:
             self.next_audio()
@@ -399,7 +372,34 @@ class MyWidget(QtWidgets.QWidget):
         self.textbox_eng[i].setText("")
         self.path_thai[i]=""
         self.path_eng[i]=""
-            
+    
+    @QtCore.Slot()
+    def save_data(self):
+        print("save !!")
+        conn = sqlite3.connect(database_filename)
+        cursor = conn.cursor()
+
+        for i in range(24):
+            hour=self.combobox[i].currentText()
+            minute=self.combobox_minutes[i].currentText()
+            sound=self.path_thai[i]
+            sound_eng=self.path_eng[i]
+            if self.checkboxes[i].isChecked():
+                status=1
+            else:
+                status=0
+            if self.checkboxes2[i].isChecked():
+                tell_time=1
+            else:
+                tell_time=0
+            cursor.execute('''
+                UPDATE schedule
+                SET hour = ?, minute = ?, sound = ?, sound_eng = ?, status = ?, tell_time = ?
+                WHERE id = ?
+            ''', (hour, minute, sound, sound_eng, status, tell_time, i+1))
+        conn.commit()
+        conn.close()
+
 if __name__ == "__main__":
     app = QtWidgets.QApplication([])
 
