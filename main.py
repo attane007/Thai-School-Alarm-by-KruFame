@@ -227,6 +227,7 @@ class MyWidget(QtWidgets.QWidget):
         self.bottom_grid_layout = QtWidgets.QGridLayout()
         self.startup_layout = QtWidgets.QHBoxLayout()
         self.shutdown_layout = QtWidgets.QHBoxLayout()
+        self.bell_layout = QtWidgets.QHBoxLayout()
 
         self.checkbox_auto_startup = QtWidgets.QCheckBox("เริ่มโปรแกรมอัตโนมัติเมื่อเปิดเครื่อง")
         cursor.execute('SELECT * FROM utility where name="auto_startup" limit 1')
@@ -241,7 +242,7 @@ class MyWidget(QtWidgets.QWidget):
         cursor.execute('SELECT * FROM utility where name="startup" limit 1')
         startup = cursor.fetchone()
         if startup:
-            startup=dict(auto_startup)
+            startup=dict(startup)
             if startup['value']=='1':
                 self.checkbox_startup.setChecked(True)
 
@@ -264,12 +265,24 @@ class MyWidget(QtWidgets.QWidget):
         cursor.execute('SELECT * FROM utility where name="shutdown" limit 1')
         shutdown = cursor.fetchone()
         if shutdown:
-            shutdown=dict(auto_startup)
+            shutdown=dict(shutdown)
             if shutdown['value']=='1':
                 self.checkbox_shutdown.setChecked(True)
 
         self.label_bell = QtWidgets.QLabel("เสียงระฆัง: ")
+        self.label_bell.setFixedWidth(60)
         self.combo_bell = QtWidgets.QComboBox()
+        cursor.execute('SELECT * FROM bell')
+        bell = cursor.fetchall()
+        if bell:
+            for i in bell:
+                i=dict(i)
+                bell_id = i['id']
+                bell_name = i['name']
+                self.combo_bell.addItem(bell_name, bell_id)
+                if i['status']:
+                    self.combo_bell.setCurrentIndex(self.combo_bell.findData(bell_id))
+
 
         self.startup_layout.addWidget(self.checkbox_startup)
         self.startup_layout.addWidget(self.datetime_startup)
@@ -279,10 +292,14 @@ class MyWidget(QtWidgets.QWidget):
         self.shutdown_layout.addWidget(self.datetime_shutdown)
         self.shutdown_layout.setContentsMargins(0, 0, 30, 0)
 
+        self.bell_layout.addWidget(self.label_bell)
+        self.bell_layout.addWidget(self.combo_bell)
+        self.bell_layout.setContentsMargins(0, 0, 30, 0)
+
         self.bottom_grid_layout.addWidget(self.checkbox_auto_startup,0,0)
         self.bottom_grid_layout.addLayout(self.startup_layout,0,1)
         self.bottom_grid_layout.addLayout(self.shutdown_layout,0,2)
-        self.bottom_grid_layout.addWidget(self.label_bell,0,3)
+        self.bottom_grid_layout.addLayout(self.bell_layout,0,3)
         self.system_layout.addLayout(self.bottom_grid_layout)
 
         conn.commit()
@@ -572,6 +589,15 @@ class MyWidget(QtWidgets.QWidget):
                 SET hour = ?, minute = ?, sound = ?, sound_eng = ?, status = ?, tell_time = ?
                 WHERE id = ?
             ''', (hour, minute, sound, sound_eng, status, tell_time, i+1))
+        
+        # Update bell
+        bell_id=self.combo_bell.currentIndex()
+        bell_id=bell_id+1
+        print(bell_id)
+        cursor.execute('''UPDATE bell set status=0
+                       ''')
+        cursor.execute('UPDATE bell SET status = 1 WHERE id = ?', (bell_id,))
+        
         conn.commit()
         conn.close()
         self.initialize_schedule()
