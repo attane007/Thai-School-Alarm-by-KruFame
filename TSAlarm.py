@@ -651,9 +651,7 @@ class MyWidget(QtWidgets.QWidget):
             raise NotImplementedError(f"Unsupported OS: {os_name}")
         
     def add_to_startup_windows(self,action):
-        import shutil
         try:
-            import pythoncom
             from win32com.client import Dispatch
         except ImportError:
             print("pywin32 is required on Windows.")
@@ -704,6 +702,8 @@ class MyWidget(QtWidgets.QWidget):
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication([])
+    app_icon = QtGui.QIcon("icon.jpg") 
+    app.setWindowIcon(app_icon)
 
     main_widget = QtWidgets.QWidget()
     scroll = QtWidgets.QScrollArea()
