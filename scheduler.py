@@ -9,6 +9,7 @@ class SoundScheduler(QtCore.QObject):
         self.timer.start(1000)  # Check every second
         
         # self.load_schedule_from_database()
+        self.last_played_minute = None
 
     def load_schedule_from_database(self):
         # Connect to SQLite database
@@ -38,10 +39,14 @@ class SoundScheduler(QtCore.QObject):
         
         print(f"Local Time: {current_hour_local}:{current_minute_local}:{current_second_local}")
 
-        # for hour, minute, sound_path in self.schedule_list:
-        #     if current_hour == hour and current_minute == minute:
-        #         # Play sound function (replace with your sound playing logic)
-        #         self.play_sound(sound_path)
+        # if current_minute_local != self.last_played_minute:
+        #     # Check if current time matches any scheduled time
+        #     for hour, minute, sound_path in self.schedule_list:
+        #         if current_time_local.time().hour() == hour and current_time_local.time().minute() == minute:
+        #             # Play sound function (replace with your sound playing logic)
+        #             self.play_sound(sound_path)
+        #             self.last_played_minute = current_minute_local
+        #             break
 
     def play_sound(self, sound_path):
         print(f"Playing sound: {sound_path}")
