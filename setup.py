@@ -19,7 +19,7 @@ if sys.platform == "win32":
     base = "Win32GUI"  # Set base to None for console application
 
 setup(
-    name="ThaiSchoolAlarm",
+    name="Thai School Alarm",
     version="1.0",
     description="Thai School Alarm by KruFame",
     options={"build_exe": build_exe_options},
