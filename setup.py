@@ -7,7 +7,8 @@ build_exe_options = {
     "include_files": [
         "audio/",  # Adjust paths as needed
         "resource/",
-        "icon.ico"
+        "icon.ico",
+        "icon.jpg"
     ],
     "excludes": [],
     "optimize": 2,
