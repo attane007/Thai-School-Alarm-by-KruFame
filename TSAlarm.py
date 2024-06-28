@@ -2,6 +2,7 @@ import sys
 import sqlite3
 import os
 import platform
+import subprocess
 from PySide6 import QtCore, QtWidgets, QtGui
 from PySide6.QtGui import QIcon
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
@@ -615,48 +616,104 @@ class MyWidget(QtWidgets.QWidget):
                 print("Startup shortcut does not exist.")
 
     def add_to_startup_linux(self,action):
-        service_path = '/etc/systemd/system/thai_school_alarm.service'
+        service_name = 'thai_school_alarm.service'
+        service_path = f'/etc/systemd/system/{service_name}'
         script_path = sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__)
 
         if action == 'add':
             service_content = f"""
             [Unit]
-            Description=thai_school_alarm
+            Description=Thai School Alarm
 
             [Service]
-            ExecStart={script_path}
+            ExecStart={sys.executable} {script_path}
+            Restart=always
+            User={os.getlogin()}
+            Group={os.getlogin()}
 
             [Install]
-            WantedBy=default.target
+            WantedBy=multi-user.target
             """
-            with open(service_path, 'w') as service_file:
-                service_file.write(service_content)
-            
-            os.system('systemctl enable thai_school_alarm.service')
+            try:
+                with open(service_path, 'w') as service_file:
+                    service_file.write(service_content)
+                subprocess.run(['systemctl', 'daemon-reload'], check=True)
+                subprocess.run(['systemctl', 'enable', service_name], check=True)
+                print("Service added and enabled.")
+            except Exception as e:
+                print(f"Error adding service: {e}")
         elif action == 'remove':
             if os.path.exists(service_path):
-                os.remove(service_path)
-                os.system('systemctl disable thai_school_alarm.service')
+                try:
+                    subprocess.run(['systemctl', 'disable', service_name], check=True)
+                    os.remove(service_path)
+                    subprocess.run(['systemctl', 'daemon-reload'], check=True)
+                    print("Service removed and disabled.")
+                except Exception as e:
+                    print(f"Error removing service: {e}")
             else:
                 print("Systemd service does not exist.")
 
+class MainWindow(QtWidgets.QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Thai School Alarm by KruFame")
+        
+        self.setWindowIcon(QtGui.QIcon("icon.jpg"))
+
+        self.main_widget = QtWidgets.QWidget()
+        self.scroll = QtWidgets.QScrollArea()
+        self.scroll.setWidgetResizable(True)
+
+        self.widget = MyWidget()
+        self.scroll.setWidget(self.widget)
+
+        self.layout = QtWidgets.QVBoxLayout(self.main_widget)
+        self.layout.addWidget(self.scroll)
+        self.main_widget.setLayout(self.layout)
+
+        self.setCentralWidget(self.main_widget)
+        self.showMaximized()
+
+        self.tray_icon = QtWidgets.QSystemTrayIcon(self)
+        self.tray_icon.setIcon(QtGui.QIcon("icon.ico"))
+
+        # Check if system tray is supported
+        if QtWidgets.QSystemTrayIcon.isSystemTrayAvailable():
+            self.tray_icon = QtWidgets.QSystemTrayIcon(self)
+            self.tray_icon.setIcon(QtGui.QIcon("icon.ico"))
+
+            tray_menu = QtWidgets.QMenu()
+            restore_action = tray_menu.addAction("Restore")
+            quit_action = tray_menu.addAction("Quit")
+
+            restore_action.triggered.connect(self.show)
+            quit_action.triggered.connect(QtWidgets.QApplication.instance().quit)
+
+            self.tray_icon.setContextMenu(tray_menu)
+            self.tray_icon.activated.connect(self.on_tray_icon_activated)
+            self.tray_icon.show()
+
+    def closeEvent(self, event):
+        event.ignore()
+        self.hide()
+        self.tray_icon.showMessage(
+            "Application Minimized",
+            "The application is still running in the system tray.",
+            QtWidgets.QSystemTrayIcon.Information,
+            2000
+        )
+
+    def on_tray_icon_activated(self, reason):
+        if reason == QtWidgets.QSystemTrayIcon.Trigger:
+            self.show()
 
 if __name__ == "__main__":
-    app = QtWidgets.QApplication([])
-    app_icon = QtGui.QIcon("icon.ico") 
+    app = QtWidgets.QApplication(sys.argv)
+    app_icon = QtGui.QIcon("icon.jpg")
     app.setWindowIcon(app_icon)
 
-    main_widget = QtWidgets.QWidget()
-    scroll = QtWidgets.QScrollArea()
-    scroll.setWidgetResizable(True)
+    main_window = MainWindow()
+    main_window.show()
 
-    widget = MyWidget()
-    scroll.setWidget(widget)
-
-    layout = QtWidgets.QVBoxLayout(main_widget)
-    layout.addWidget(scroll)
-    main_widget.setWindowTitle("Thai School Alarm by KruFame")
-    main_widget.setLayout(layout)
-
-    main_widget.showMaximized()
     sys.exit(app.exec())
