@@ -615,44 +615,37 @@ class MyWidget(QtWidgets.QWidget):
             else:
                 print("Startup shortcut does not exist.")
 
-    def add_to_startup_linux(self,action):
-        service_name = 'thai_school_alarm.service'
-        service_path = f'/etc/systemd/system/{service_name}'
-        script_path = sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__)
+    def add_to_startup_linux(self, action):
+        desktop_entry_name = 'thai_school_alarm.desktop'
+        autostart_path = os.path.expanduser(f'~/.config/autostart/{desktop_entry_name}')
+        executable_path = sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__)
+        working_directory = os.path.dirname(executable_path)
 
         if action == 'add':
-            service_content = f"""
-            [Unit]
-            Description=Thai School Alarm
-
-            [Service]
-            ExecStart={sys.executable} {script_path}
-            Restart=always
-            User={os.getlogin()}
-            Group={os.getlogin()}
-
-            [Install]
-            WantedBy=multi-user.target
+            desktop_entry_content = f"""
+            [Desktop Entry]
+            Type=Application
+            Name=Thai School Alarm
+            Exec={executable_path}
+            Path={working_directory}
+            X-GNOME-Autostart-enabled=true
             """
             try:
-                with open(service_path, 'w') as service_file:
-                    service_file.write(service_content)
-                subprocess.run(['systemctl', 'daemon-reload'], check=True)
-                subprocess.run(['systemctl', 'enable', service_name], check=True)
-                print("Service added and enabled.")
+                with open(autostart_path, 'w') as desktop_file:
+                    desktop_file.write(desktop_entry_content)
+                os.chmod(autostart_path, 0o755)  # Make the desktop entry executable
+                print("Autostart entry added.")
             except Exception as e:
-                print(f"Error adding service: {e}")
+                print(f"Error adding autostart entry: {e}")
         elif action == 'remove':
-            if os.path.exists(service_path):
+            if os.path.exists(autostart_path):
                 try:
-                    subprocess.run(['systemctl', 'disable', service_name], check=True)
-                    os.remove(service_path)
-                    subprocess.run(['systemctl', 'daemon-reload'], check=True)
-                    print("Service removed and disabled.")
+                    os.remove(autostart_path)
+                    print("Autostart entry removed.")
                 except Exception as e:
-                    print(f"Error removing service: {e}")
+                    print(f"Error removing autostart entry: {e}")
             else:
-                print("Systemd service does not exist.")
+                print("Autostart entry does not exist.")
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
