@@ -687,15 +687,19 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tray_icon.activated.connect(self.on_tray_icon_activated)
             self.tray_icon.show()
 
-    def closeEvent(self, event):
-        event.ignore()
-        self.hide()
-        self.tray_icon.showMessage(
-            "Application Minimized",
-            "The application is still running in the system tray.",
-            QtWidgets.QSystemTrayIcon.Information,
-            2000
-        )
+    def changeEvent(self, event):
+        if event.type() == QtCore.QEvent.WindowStateChange:
+            if self.isMinimized():
+                event.ignore()
+                self.hide()
+                self.tray_icon.showMessage(
+                    "Application Minimized",
+                    "The application is still running in the system tray.",
+                    QtWidgets.QSystemTrayIcon.Information,
+                    2000
+                )
+            else:
+                super().changeEvent(event)
 
     def on_tray_icon_activated(self, reason):
         if reason == QtWidgets.QSystemTrayIcon.Trigger:
