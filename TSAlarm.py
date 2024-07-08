@@ -626,11 +626,13 @@ class MyWidget(QtWidgets.QWidget):
             [Desktop Entry]
             Type=Application
             Name=Thai School Alarm
-            Exec={executable_path}
-            Path={working_directory}
+            Exec="{executable_path}"
+            Path="{working_directory}"
             X-GNOME-Autostart-enabled=true
             """
             try:
+                os.makedirs(os.path.dirname(autostart_path), exist_ok=True)
+                
                 with open(autostart_path, 'w') as desktop_file:
                     desktop_file.write(desktop_entry_content)
                 os.chmod(autostart_path, 0o755)  # Make the desktop entry executable
