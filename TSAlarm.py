@@ -623,13 +623,14 @@ class MyWidget(QtWidgets.QWidget):
 
         if action == 'add':
             desktop_entry_content = f"""
-            [Desktop Entry]
-            Type=Application
-            Name=Thai School Alarm
-            Exec="{executable_path}"
-            Path="{working_directory}"
-            X-GNOME-Autostart-enabled=true
-            """
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Thai School Alarm
+Exec="{executable_path}"
+Path="{working_directory}"
+X-GNOME-Autostart-enabled=true
+"""
             try:
                 os.makedirs(os.path.dirname(autostart_path), exist_ok=True)
                 
